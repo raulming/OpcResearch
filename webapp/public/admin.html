@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OPC AI 调研后台</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Admin</p>
+        <h1>OPC AI 调研后台</h1>
+      </div>
+      <a class="ghost-link" href="/">学员入口</a>
+    </header>
+
+    <main class="shell">
+      <section class="admin-login" id="loginBox">
+        <label>后台口令<input id="tokenInput" type="password" placeholder="默认 opc2026" /></label>
+        <button class="primary" id="loadBtn">查看数据</button>
+      </section>
+
+      <section id="dashboard" class="hidden">
+        <div class="metrics">
+          <article><span>提交人数</span><strong id="totalCount">0</strong></article>
+          <article><span>启动准备度均分</span><strong id="avgReadiness">0</strong></article>
+          <article><span>AI 能力均分</span><strong id="avgAi">0</strong></article>
+        </div>
+
+        <div class="admin-grid">
+          <section class="section"><h2>启动准备度分布</h2><div id="readinessChart" class="bars"></div></section>
+          <section class="section"><h2>AI 能力分布</h2><div id="aiChart" class="bars"></div></section>
+          <section class="section"><h2>创业方向分布</h2><div id="directionChart" class="bars"></div></section>
+          <section class="section"><h2>帮助意向分布</h2><div id="supportChart" class="bars"></div></section>
+          <section class="section"><h2>内部服务线索</h2><div id="serviceChart" class="bars"></div></section>
+        </div>
+
+        <section class="section">
+          <div class="section-head table-head">
+            <div>
+              <h2>提交明细</h2>
+              <p>可按服务线索、方向、联系方式做后续跟进。</p>
+            </div>
+            <button class="secondary" id="exportBtn">导出 CSV</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>时间</th>
+                  <th>姓名</th>
+                  <th>联系方式</th>
+                  <th>职业</th>
+                  <th>创业状态</th>
+                  <th>AI 状态</th>
+                  <th>方向</th>
+                  <th>帮助意向</th>
+                  <th>服务线索</th>
+                  <th>痛点</th>
+                </tr>
+              </thead>
+              <tbody id="responsesBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="/admin.js"></script>
+  </body>
+</html>

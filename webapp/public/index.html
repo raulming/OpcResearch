@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OPC AI 创业自测</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">OPC AI 公益课</p>
+        <h1>OPC 启动准备度与 AI 能力自测</h1>
+      </div>
+      <a class="ghost-link" href="/admin.html">后台</a>
+    </header>
+
+    <main class="shell">
+      <section class="hero">
+        <div class="hero-copy">
+          <h2>扫码后 3 分钟，得到你的启动路径</h2>
+          <p>先判断自己是否已经具备启动准备度，再结合 AI 能力，找到最适合的创业验证场景和第一份交付物。</p>
+        </div>
+        <div class="hero-panel">
+          <span>输出结果</span>
+          <strong>冲动探索 / 副业验证 / 服务启动 / 系统放大</strong>
+          <small>并生成对应的 AI 创业方向</small>
+        </div>
+      </section>
+
+      <form id="surveyForm" class="survey">
+        <section class="section">
+          <div class="section-head">
+            <p class="step">01</p>
+            <div>
+              <h2>OPC 启动准备度自测</h2>
+              <p>每题 1-5 分：1 分完全不符合，5 分非常符合。</p>
+            </div>
+          </div>
+          <div id="readinessQuestions" class="question-list"></div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <p class="step">02</p>
+            <div>
+              <h2>AI 能力状态自测</h2>
+              <p>每题 1-5 分：1 分完全不会，3 分偶尔能做到，5 分可以稳定做到。</p>
+            </div>
+          </div>
+          <div id="aiQuestions" class="question-list compact"></div>
+        </section>
+
+        <section class="section">
+          <div class="section-head">
+            <p class="step">03</p>
+          <div>
+            <h2>补充调研信息</h2>
+              <p>帮助你把测试结果和真实场景对应起来，也方便课后自我复盘。</p>
+            </div>
+          </div>
+          <div class="form-grid">
+            <label>姓名或昵称<input name="name" placeholder="例如：明哥" /></label>
+            <label>联系方式<input name="contact" placeholder="微信 / 手机 / 邮箱" /></label>
+            <label>当前职业 / 专业能力<input name="role" placeholder="例如：运营、咨询师、产品经理" /></label>
+            <label>每周可投入时间
+              <select name="weeklyTime">
+                <option value="每周 3 小时以内">每周 3 小时以内</option>
+                <option value="每周 3-8 小时">每周 3-8 小时</option>
+                <option value="每周 8-20 小时">每周 8-20 小时</option>
+                <option value="每周 20 小时以上">每周 20 小时以上</option>
+              </select>
+            </label>
+            <label>可接受投入预算
+              <select name="budget">
+                <option value="尽量零成本">尽量零成本</option>
+                <option value="1000 元以内">1000 元以内</option>
+                <option value="1000-5000 元">1000-5000 元</option>
+                <option value="5000 元以上">5000 元以上</option>
+              </select>
+            </label>
+            <label>已有渠道或私域规模<input name="channel" placeholder="例如：朋友圈 800 人、小红书 2000 粉" /></label>
+            <label>想服务的人群<input name="targetUser" placeholder="例如：本地门店老板、职场新人" /></label>
+            <label>最想尝试的 AI 场景<input name="preferredScene" placeholder="例如：内容获客、报告生成、自动化工具" /></label>
+            <label>是否希望课后获得帮助
+              <select name="supportIntent">
+                <option value="暂时不需要，先自己尝试">暂时不需要，先自己尝试</option>
+                <option value="希望获得学习资料">希望获得学习资料</option>
+                <option value="希望有人帮我诊断方向">希望有人帮我诊断方向</option>
+                <option value="希望参加后续训练或陪跑">希望参加后续训练或陪跑</option>
+              </select>
+            </label>
+            <label class="wide">你最想解决的痛点<textarea name="painPoint" rows="3" placeholder="请写一个真实、具体、愿意投入时间解决的问题"></textarea></label>
+            <label class="wide">其他备注<textarea name="notes" rows="3" placeholder="例如：你希望进一步讨论的问题"></textarea></label>
+          </div>
+          <button class="primary" type="submit">提交并查看结果</button>
+        </section>
+      </form>
+
+      <section id="result" class="result hidden" aria-live="polite"></section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
