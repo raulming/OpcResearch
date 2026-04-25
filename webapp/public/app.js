@@ -180,7 +180,6 @@ document.getElementById("surveyForm").addEventListener("submit", async (event) =
     button.textContent = "已提交，可继续修改后再次提交";
   } catch (error) {
     renderResult(buildLocalResult(payload));
-    alert(error.message);
     button.textContent = "已生成结果，后台未保存";
   } finally {
     button.disabled = false;
