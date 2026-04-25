@@ -330,6 +330,7 @@ textarea:focus {
 
 .admin-login {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
   align-items: end;
 }
@@ -341,6 +342,12 @@ textarea:focus {
 .admin-login .primary {
   width: auto;
   margin: 0;
+}
+
+.admin-message {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--amber);
 }
 
 .metrics {

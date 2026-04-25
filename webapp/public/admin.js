@@ -41,6 +41,26 @@ function renderBars(id, data, total) {
     : "<p>暂无数据</p>";
 }
 
+async function readJsonResponse(response) {
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    throw new Error("接口暂时不可用，请确认服务已更新并重启。");
+  }
+  return response.json();
+}
+
+function showAdminMessage(message) {
+  const loginBox = document.getElementById("loginBox");
+  let messageEl = document.getElementById("adminMessage");
+  if (!messageEl) {
+    messageEl = document.createElement("p");
+    messageEl.id = "adminMessage";
+    messageEl.className = "admin-message";
+    loginBox.appendChild(messageEl);
+  }
+  messageEl.textContent = message;
+}
+
 function renderTable(rows) {
   latestRows = rows;
   document.getElementById("responsesBody").innerHTML = rows
@@ -67,24 +87,26 @@ function renderTable(rows) {
 
 async function loadData() {
   const token = getToken();
-  const response = await fetch(apiUrl("/api/admin/responses"), {
-    headers: { "x-admin-token": token },
-  });
-  const data = await response.json();
-  if (!data.ok) {
-    alert(data.error || "无法读取数据");
-    return;
+  try {
+    const response = await fetch(apiUrl("/api/admin/responses"), {
+      headers: { "x-admin-token": token },
+    });
+    const data = await readJsonResponse(response);
+    if (!data.ok) throw new Error(data.error || "无法读取数据");
+    showAdminMessage("");
+    document.getElementById("dashboard").classList.remove("hidden");
+    document.getElementById("totalCount").textContent = data.stats.total;
+    document.getElementById("avgReadiness").textContent = data.stats.avgReadiness;
+    document.getElementById("avgAi").textContent = data.stats.avgAi;
+    renderBars("readinessChart", data.stats.readiness, data.stats.total);
+    renderBars("aiChart", data.stats.aiLevel, data.stats.total);
+    renderBars("directionChart", data.stats.direction, data.stats.total);
+    renderBars("supportChart", data.stats.supportIntent, data.stats.total);
+    renderBars("serviceChart", data.stats.serviceLead, data.stats.total);
+    renderTable(data.responses);
+  } catch (error) {
+    showAdminMessage(error.message);
   }
-  document.getElementById("dashboard").classList.remove("hidden");
-  document.getElementById("totalCount").textContent = data.stats.total;
-  document.getElementById("avgReadiness").textContent = data.stats.avgReadiness;
-  document.getElementById("avgAi").textContent = data.stats.avgAi;
-  renderBars("readinessChart", data.stats.readiness, data.stats.total);
-  renderBars("aiChart", data.stats.aiLevel, data.stats.total);
-  renderBars("directionChart", data.stats.direction, data.stats.total);
-  renderBars("supportChart", data.stats.supportIntent, data.stats.total);
-  renderBars("serviceChart", data.stats.serviceLead, data.stats.total);
-  renderTable(data.responses);
 }
 
 function toCsv(rows) {
