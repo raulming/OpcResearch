@@ -114,7 +114,7 @@ function buildLocalResult(payload) {
 async function readJsonResponse(response) {
   const contentType = response.headers.get("content-type") || "";
   if (!contentType.includes("application/json")) {
-    throw new Error("提交接口没有返回 JSON。请确认当前页面是通过 Node 服务访问，而不是 GitHub 静态页面或直接打开 HTML 文件。");
+    throw new Error("结果已生成，但未保存到后台。");
   }
   return response.json();
 }
@@ -180,7 +180,7 @@ document.getElementById("surveyForm").addEventListener("submit", async (event) =
     button.textContent = "已提交，可继续修改后再次提交";
   } catch (error) {
     renderResult(buildLocalResult(payload));
-    alert(`${error.message}\n\n本页已先为你生成自测结果，但这次没有写入后台。`);
+    alert(error.message);
     button.textContent = "已生成结果，后台未保存";
   } finally {
     button.disabled = false;
