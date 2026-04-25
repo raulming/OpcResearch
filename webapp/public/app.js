@@ -57,6 +57,68 @@ function sum(numbers) {
   return numbers.reduce((total, value) => total + value, 0);
 }
 
+function classifyReadiness(score) {
+  if (score <= 16) return "冲动探索型";
+  if (score <= 24) return "副业验证型";
+  if (score <= 30) return "服务启动型";
+  return "系统放大型";
+}
+
+function classifyAi(score) {
+  if (score <= 20) return "入门型";
+  if (score <= 35) return "应用型";
+  if (score <= 45) return "生产型";
+  return "操盘型";
+}
+
+function recommendDirection(readinessScore, aiScore) {
+  if (readinessScore <= 16 || aiScore <= 20) {
+    return {
+      direction: "职业提效 / 个人学习",
+      firstDeliverable: "个人工作流清单 + 10 个潜在客户访谈问题",
+    };
+  }
+  if (readinessScore <= 24 && aiScore <= 35) {
+    return {
+      direction: "副业验证 / 内容获客",
+      firstDeliverable: "30 天最小验证计划 + 1 个试单方案",
+    };
+  }
+  if (readinessScore >= 25 && aiScore <= 35) {
+    return {
+      direction: "服务型 OPC",
+      firstDeliverable: "服务包 + 报价单 + 交付 SOP",
+    };
+  }
+  if (readinessScore <= 30 && aiScore >= 36) {
+    return {
+      direction: "工具化 / 产品化",
+      firstDeliverable: "模板产品 / 小工具 / 课程原型 + 付费测试页",
+    };
+  }
+  return {
+    direction: "一人公司系统",
+    firstDeliverable: "获客-交付-复盘自动化流程",
+  };
+}
+
+function buildLocalResult(payload) {
+  return {
+    ...payload,
+    readinessLevel: classifyReadiness(payload.readinessScore),
+    aiLevel: classifyAi(payload.aiScore),
+    ...recommendDirection(payload.readinessScore, payload.aiScore),
+  };
+}
+
+async function readJsonResponse(response) {
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    throw new Error("提交接口没有返回 JSON。请确认当前页面是通过 Node 服务访问，而不是 GitHub 静态页面或直接打开 HTML 文件。");
+  }
+  return response.json();
+}
+
 function escapeHtml(value) {
   return String(value || "")
     .replaceAll("&", "&amp;")
@@ -112,13 +174,14 @@ document.getElementById("surveyForm").addEventListener("submit", async (event) =
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    const data = await response.json();
+    const data = await readJsonResponse(response);
     if (!data.ok) throw new Error(data.error || "提交失败");
     renderResult(data.result);
     button.textContent = "已提交，可继续修改后再次提交";
   } catch (error) {
-    alert(error.message);
-    button.textContent = "提交并查看结果";
+    renderResult(buildLocalResult(payload));
+    alert(`${error.message}\n\n本页已先为你生成自测结果，但这次没有写入后台。`);
+    button.textContent = "已生成结果，后台未保存";
   } finally {
     button.disabled = false;
   }
