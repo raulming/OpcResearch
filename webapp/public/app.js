@@ -22,6 +22,16 @@ const aiQuestions = [
   "我知道接下来 7 天要用 AI 改造哪个具体业务环节。",
 ];
 
+const APP_BASE = (() => {
+  const scriptSrc = document.currentScript?.getAttribute("src") || "";
+  const scriptPath = scriptSrc.startsWith("http") ? new URL(scriptSrc).pathname : scriptSrc;
+  return scriptPath.endsWith("/app.js") ? scriptPath.slice(0, -"/app.js".length) : "";
+})();
+
+function apiUrl(path) {
+  return `${APP_BASE}${path}`;
+}
+
 function renderQuestions(containerId, questions, name) {
   const container = document.getElementById(containerId);
   container.innerHTML = questions
@@ -169,7 +179,7 @@ document.getElementById("surveyForm").addEventListener("submit", async (event) =
   button.disabled = true;
   button.textContent = "提交中...";
   try {
-    const response = await fetch("/api/submit", {
+    const response = await fetch(apiUrl("/api/submit"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

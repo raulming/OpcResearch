@@ -1,5 +1,15 @@
 let latestRows = [];
 
+const APP_BASE = (() => {
+  const scriptSrc = document.currentScript?.getAttribute("src") || "";
+  const scriptPath = scriptSrc.startsWith("http") ? new URL(scriptSrc).pathname : scriptSrc;
+  return scriptPath.endsWith("/admin.js") ? scriptPath.slice(0, -"/admin.js".length) : "";
+})();
+
+function apiUrl(path) {
+  return `${APP_BASE}${path}`;
+}
+
 function getToken() {
   const params = new URLSearchParams(location.search);
   return document.getElementById("tokenInput").value || params.get("token") || "";
@@ -57,7 +67,7 @@ function renderTable(rows) {
 
 async function loadData() {
   const token = getToken();
-  const response = await fetch("/api/admin/responses", {
+  const response = await fetch(apiUrl("/api/admin/responses"), {
     headers: { "x-admin-token": token },
   });
   const data = await response.json();

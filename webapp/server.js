@@ -5,6 +5,7 @@ const crypto = require("crypto");
 
 const PORT = Number(process.env.PORT || 3100);
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "opc2026";
+const BASE_PATH = normalizeBasePath(process.env.BASE_PATH || "");
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, "public");
 const DATA_DIR = path.join(ROOT, "data");
@@ -17,6 +18,17 @@ const MIME = {
   ".json": "application/json; charset=utf-8",
   ".svg": "image/svg+xml; charset=utf-8",
 };
+
+function normalizeBasePath(value) {
+  const clean = String(value || "").trim().replace(/\/+$/, "");
+  if (!clean || clean === "/") return "";
+  return clean.startsWith("/") ? clean : `/${clean}`;
+}
+
+function stripBasePath(url) {
+  if (!BASE_PATH || url === BASE_PATH) return url;
+  return url.startsWith(`${BASE_PATH}/`) ? url.slice(BASE_PATH.length) : url;
+}
 
 function ensureDataFile() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -158,13 +170,13 @@ function summarize(responses) {
 }
 
 function isAdmin(req) {
-  const url = new URL(req.url, `http://${req.headers.host}`);
+  const url = new URL(stripBasePath(req.url), `http://${req.headers.host}`);
   const token = req.headers["x-admin-token"] || url.searchParams.get("token");
   return token === ADMIN_TOKEN;
 }
 
 async function handleApi(req, res) {
-  const url = new URL(req.url, `http://${req.headers.host}`);
+  const url = new URL(stripBasePath(req.url), `http://${req.headers.host}`);
 
   if (req.method === "POST" && url.pathname === "/api/submit") {
     const body = await parseBody(req);
@@ -211,7 +223,7 @@ async function handleApi(req, res) {
 }
 
 function serveStatic(req, res) {
-  const url = new URL(req.url, `http://${req.headers.host}`);
+  const url = new URL(stripBasePath(req.url), `http://${req.headers.host}`);
   let pathname = decodeURIComponent(url.pathname);
   if (pathname === "/") pathname = "/index.html";
   const filePath = path.normalize(path.join(PUBLIC_DIR, pathname));
@@ -233,7 +245,8 @@ function serveStatic(req, res) {
 
 const server = http.createServer(async (req, res) => {
   try {
-    if (req.url.startsWith("/api/")) {
+    const pathname = new URL(stripBasePath(req.url), `http://${req.headers.host}`).pathname;
+    if (pathname.startsWith("/api/")) {
       await handleApi(req, res);
       return;
     }
@@ -246,5 +259,5 @@ const server = http.createServer(async (req, res) => {
 ensureDataFile();
 server.listen(PORT, () => {
   console.log(`OPC survey app: http://localhost:${PORT}`);
-  console.log(`Admin page: http://localhost:${PORT}/admin.html?token=${ADMIN_TOKEN}`);
+  console.log(`Admin page: http://localhost:${PORT}${BASE_PATH}/admin.html?token=${ADMIN_TOKEN}`);
 });

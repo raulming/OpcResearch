@@ -21,4 +21,10 @@ node webapp/server.js
 PORT=3100 ADMIN_TOKEN=你的后台口令 node webapp/server.js
 ```
 
+如果部署在子路径，例如 `/opcresearch/`：
+
+```bash
+BASE_PATH=/opcresearch PORT=3100 ADMIN_TOKEN=你的后台口令 node webapp/server.js
+```
+
 提交数据会写入 `webapp/data/responses.json`。
