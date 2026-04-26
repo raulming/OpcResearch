@@ -106,6 +106,13 @@ function cleanNumber(value, min = 0, max = 100) {
   return Math.max(min, Math.min(max, num));
 }
 
+function cleanOptionalNumber(value, min = 0, max = 100) {
+  if (value === undefined || value === null || value === "") return null;
+  const num = Number(value);
+  if (!Number.isFinite(num)) return null;
+  return Math.max(min, Math.min(max, num));
+}
+
 function classifyReadiness(score) {
   if (score <= 16) return "冲动探索型";
   if (score <= 24) return "副业验证型";
@@ -118,6 +125,15 @@ function classifyAi(score) {
   if (score <= 35) return "应用型";
   if (score <= 45) return "生产型";
   return "操盘型";
+}
+
+function classifyBehavior(score) {
+  if (score === undefined || score === null || score === "") return "未填写";
+  if (!Number.isFinite(Number(score))) return "未填写";
+  if (score <= 22) return "灵感探索型";
+  if (score <= 34) return "任务推进型";
+  if (score <= 43) return "客户验证型";
+  return "系统操盘型";
 }
 
 function recommendDirection(readinessScore, aiScore) {
@@ -238,13 +254,17 @@ function summarize(responses) {
     direction: {},
     serviceLead: {},
     supportIntent: {},
+    behaviorType: {},
     avgReadiness: 0,
     avgAi: 0,
+    avgBehavior: 0,
   };
   if (!responses.length) return stats;
 
   let readinessSum = 0;
   let aiSum = 0;
+  let behaviorSum = 0;
+  let behaviorCount = 0;
   for (const item of responses) {
     readinessSum += item.readinessScore;
     aiSum += item.aiScore;
@@ -254,9 +274,17 @@ function summarize(responses) {
     stats.serviceLead[item.serviceLead] = (stats.serviceLead[item.serviceLead] || 0) + 1;
     const supportIntent = item.supportIntent || "未填写";
     stats.supportIntent[supportIntent] = (stats.supportIntent[supportIntent] || 0) + 1;
+    const behaviorScore = Number(item.behaviorScore);
+    const behaviorType = item.behaviorType || classifyBehavior(behaviorScore);
+    stats.behaviorType[behaviorType] = (stats.behaviorType[behaviorType] || 0) + 1;
+    if (Number.isFinite(behaviorScore)) {
+      behaviorSum += behaviorScore;
+      behaviorCount += 1;
+    }
   }
   stats.avgReadiness = Math.round((readinessSum / responses.length) * 10) / 10;
   stats.avgAi = Math.round((aiSum / responses.length) * 10) / 10;
+  stats.avgBehavior = behaviorCount ? Math.round((behaviorSum / behaviorCount) * 10) / 10 : 0;
   return stats;
 }
 
@@ -273,6 +301,8 @@ async function handleApi(req, res) {
     const body = await parseBody(req);
     const readinessScore = cleanNumber(body.readinessScore, 8, 40);
     const aiScore = cleanNumber(body.aiScore, 10, 50);
+    const behaviorScore = cleanOptionalNumber(body.behaviorScore, 10, 50);
+    const behaviorType = classifyBehavior(behaviorScore);
     const recommendation = recommendDirection(readinessScore, aiScore);
     const response = {
       id: crypto.randomUUID(),
@@ -290,10 +320,13 @@ async function handleApi(req, res) {
       notes: cleanText(body.notes, 300),
       readinessScore,
       aiScore,
+      behaviorScore,
       readinessAnswers: Array.isArray(body.readinessAnswers) ? body.readinessAnswers.map((n) => cleanNumber(n, 1, 5)) : [],
       aiAnswers: Array.isArray(body.aiAnswers) ? body.aiAnswers.map((n) => cleanNumber(n, 1, 5)) : [],
+      behaviorAnswers: Array.isArray(body.behaviorAnswers) ? body.behaviorAnswers.map((n) => cleanNumber(n, 1, 5)) : [],
       readinessLevel: classifyReadiness(readinessScore),
       aiLevel: classifyAi(aiScore),
+      behaviorType,
       ...recommendation,
     };
     const responses = readResponses();

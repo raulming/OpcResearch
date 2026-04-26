@@ -22,6 +22,19 @@ const aiQuestions = [
   "我知道接下来 7 天要用 AI 改造哪个具体业务环节。",
 ];
 
+const behaviorQuestions = [
+  "我能把创业想法拆成每天可完成的小任务，并持续推进。",
+  "即使没有明显进展，我也能连续 2-4 周保持固定行动节奏。",
+  "面对结果不确定的尝试，我能先设定验证标准，而不是马上放弃。",
+  "当一次测试失败时，我能把它当作信息来源，而不是否定自己。",
+  "我愿意主动联系陌生或半熟客户，了解他们的真实问题。",
+  "我能接受客户提出尖锐反馈，并继续追问背后的原因。",
+  "每次行动后，我会记录结果、问题和下一步调整。",
+  "我能根据客户反馈快速修改话术、方案或交付方式。",
+  "没有人催促时，我也会主动安排验证任务并跟进结果。",
+  "遇到卡点时，我会主动寻找资料、工具或人来帮助自己推进。",
+];
+
 const APP_BASE = (() => {
   const scriptSrc = document.currentScript?.getAttribute("src") || "";
   const scriptPath = scriptSrc.startsWith("http") ? new URL(scriptSrc).pathname : scriptSrc;
@@ -81,6 +94,13 @@ function classifyAi(score) {
   return "操盘型";
 }
 
+function classifyBehavior(score) {
+  if (score <= 22) return "灵感探索型";
+  if (score <= 34) return "任务推进型";
+  if (score <= 43) return "客户验证型";
+  return "系统操盘型";
+}
+
 function recommendDirection(readinessScore, aiScore) {
   if (readinessScore <= 16 || aiScore <= 20) {
     return {
@@ -117,6 +137,7 @@ function buildLocalResult(payload) {
     ...payload,
     readinessLevel: classifyReadiness(payload.readinessScore),
     aiLevel: classifyAi(payload.aiScore),
+    behaviorType: classifyBehavior(payload.behaviorScore),
     ...recommendDirection(payload.readinessScore, payload.aiScore),
   };
 }
@@ -141,11 +162,13 @@ function renderResult(result) {
   const resultEl = document.getElementById("result");
   resultEl.classList.remove("hidden");
   const toolboxHref = `${APP_BASE}/toolbox.html`;
+  const behaviorType = result.behaviorType || classifyBehavior(result.behaviorScore);
   resultEl.innerHTML = `
     <h2>你的测试结果</h2>
     <div class="result-grid">
       <div class="result-card"><span>启动准备度</span><strong>${result.readinessScore} / 40</strong><small>${result.readinessLevel}</small></div>
       <div class="result-card"><span>AI 能力状态</span><strong>${result.aiScore} / 50</strong><small>${result.aiLevel}</small></div>
+      <div class="result-card"><span>行为风格</span><strong>${result.behaviorScore} / 50</strong><small>${escapeHtml(behaviorType)}</small></div>
       <div class="result-card"><span>适合方向</span><strong>${escapeHtml(result.direction)}</strong></div>
       <div class="result-card"><span>下一步重点</span><strong>先做最小验证</strong></div>
     </div>
@@ -165,6 +188,7 @@ function renderResult(result) {
 
 renderQuestions("readinessQuestions", readinessQuestions, "readiness");
 renderQuestions("aiQuestions", aiQuestions, "ai");
+renderQuestions("behaviorQuestions", behaviorQuestions, "behavior");
 
 document.getElementById("surveyForm").addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -172,11 +196,14 @@ document.getElementById("surveyForm").addEventListener("submit", async (event) =
   const formData = new FormData(form);
   const readinessAnswers = collectScores("readiness", readinessQuestions.length);
   const aiAnswers = collectScores("ai", aiQuestions.length);
+  const behaviorAnswers = collectScores("behavior", behaviorQuestions.length);
   const payload = {
     readinessAnswers,
     aiAnswers,
+    behaviorAnswers,
     readinessScore: sum(readinessAnswers),
     aiScore: sum(aiAnswers),
+    behaviorScore: sum(behaviorAnswers),
   };
   for (const [key, value] of formData.entries()) {
     payload[key] = value;

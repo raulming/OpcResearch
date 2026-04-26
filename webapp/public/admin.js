@@ -76,6 +76,7 @@ function renderTable(rows) {
           <td>${escapeHtml(row.role)}</td>
           <td>${row.readinessScore} / ${escapeHtml(row.readinessLevel)}</td>
           <td>${row.aiScore} / ${escapeHtml(row.aiLevel)}</td>
+          <td>${row.behaviorScore ?? "未填写"} / ${escapeHtml(row.behaviorType || "未填写")}</td>
           <td>${escapeHtml(row.direction)}</td>
           <td>${escapeHtml(row.supportIntent || "未填写")}</td>
           <td>${escapeHtml(row.serviceLead)}</td>
@@ -120,9 +121,11 @@ async function loadData() {
     document.getElementById("totalCount").textContent = data.stats.total;
     document.getElementById("avgReadiness").textContent = data.stats.avgReadiness;
     document.getElementById("avgAi").textContent = data.stats.avgAi;
+    document.getElementById("avgBehavior").textContent = data.stats.avgBehavior;
     document.getElementById("toolboxCount").textContent = (data.toolboxRuns || []).length;
     renderBars("readinessChart", data.stats.readiness, data.stats.total);
     renderBars("aiChart", data.stats.aiLevel, data.stats.total);
+    renderBars("behaviorChart", data.stats.behaviorType, data.stats.total);
     renderBars("directionChart", data.stats.direction, data.stats.total);
     renderBars("supportChart", data.stats.supportIntent, data.stats.total);
     renderBars("serviceChart", data.stats.serviceLead, data.stats.total);
@@ -134,8 +137,8 @@ async function loadData() {
 }
 
 function toCsv(rows) {
-  const headers = ["时间", "姓名", "联系方式", "职业", "启动准备分", "启动状态", "AI分", "AI状态", "方向", "帮助意向", "服务线索", "目标人群", "痛点", "AI场景", "备注"];
-  const fields = ["createdAt", "name", "contact", "role", "readinessScore", "readinessLevel", "aiScore", "aiLevel", "direction", "supportIntent", "serviceLead", "targetUser", "painPoint", "preferredScene", "notes"];
+  const headers = ["时间", "姓名", "联系方式", "职业", "启动准备分", "启动状态", "AI分", "AI状态", "behaviorScore", "behaviorType", "方向", "帮助意向", "服务线索", "目标人群", "痛点", "AI场景", "备注"];
+  const fields = ["createdAt", "name", "contact", "role", "readinessScore", "readinessLevel", "aiScore", "aiLevel", "behaviorScore", "behaviorType", "direction", "supportIntent", "serviceLead", "targetUser", "painPoint", "preferredScene", "notes"];
   const escapeCsv = (value) => `"${String(value ?? "").replaceAll('"', '""')}"`;
   return [headers.map(escapeCsv).join(","), ...rows.map((row) => fields.map((field) => escapeCsv(row[field])).join(","))].join("\n");
 }
