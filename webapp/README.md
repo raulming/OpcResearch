@@ -12,6 +12,7 @@ node webapp/server.js
 
 - 学员入口：http://localhost:3100/
 - 后台入口：http://localhost:3100/admin.html?token=opc2026
+- 极简创业工具箱：http://localhost:3100/toolbox.html
 
 ## 部署
 
@@ -28,3 +29,5 @@ BASE_PATH=/opcresearch PORT=3100 ADMIN_TOKEN=你的后台口令 node webapp/serv
 ```
 
 提交数据会写入 `webapp/data/responses.json`。
+
+工具箱免费体验记录会写入 `webapp/data/toolbox_runs.json`。该文件默认不提交到 Git，用于保护用户数据。

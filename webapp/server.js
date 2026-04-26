@@ -10,6 +10,7 @@ const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, "public");
 const DATA_DIR = path.join(ROOT, "data");
 const DATA_FILE = path.join(DATA_DIR, "responses.json");
+const TOOLBOX_FILE = path.join(DATA_DIR, "toolbox_runs.json");
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -30,25 +31,41 @@ function stripBasePath(url) {
   return url.startsWith(`${BASE_PATH}/`) ? url.slice(BASE_PATH.length) : url;
 }
 
-function ensureDataFile() {
+function ensureDataFile(file = DATA_FILE) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, "[]\n", "utf8");
+  if (!fs.existsSync(file)) {
+    fs.writeFileSync(file, "[]\n", "utf8");
   }
 }
 
-function readResponses() {
-  ensureDataFile();
+function readJsonList(file) {
+  ensureDataFile(file);
   try {
-    return JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
+    return JSON.parse(fs.readFileSync(file, "utf8"));
   } catch {
     return [];
   }
 }
 
+function writeJsonList(file, items) {
+  ensureDataFile(file);
+  fs.writeFileSync(file, JSON.stringify(items, null, 2) + "\n", "utf8");
+}
+
+function readResponses() {
+  return readJsonList(DATA_FILE);
+}
+
 function writeResponses(responses) {
-  ensureDataFile();
-  fs.writeFileSync(DATA_FILE, JSON.stringify(responses, null, 2) + "\n", "utf8");
+  writeJsonList(DATA_FILE, responses);
+}
+
+function readToolboxRuns() {
+  return readJsonList(TOOLBOX_FILE);
+}
+
+function writeToolboxRuns(runs) {
+  writeJsonList(TOOLBOX_FILE, runs);
 }
 
 function sendJson(res, status, data) {
@@ -139,6 +156,80 @@ function recommendDirection(readinessScore, aiScore) {
   };
 }
 
+function listFromText(value, fallback) {
+  const items = String(value || "")
+    .split(/[，,、\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return items.length ? items.slice(0, 6) : fallback;
+}
+
+function buildToolboxPlan(input) {
+  const targetUser = cleanText(input.targetUser, 120) || "一类有明确痛点的目标客户";
+  const painPoint = cleanText(input.painPoint, 180) || "一个高频、具体、愿意投入成本解决的问题";
+  const offer = cleanText(input.offer, 160) || "一套低成本、可手工交付的解决方案";
+  const channel = cleanText(input.channel, 120) || "朋友圈、社群、老客户或线下熟人网络";
+  const strengths = listFromText(input.strengths, ["你的专业经验", "你的行业理解", "你能持续交付的时间"]);
+  const price = cleanText(input.price, 80) || "99-499 元试单价";
+  const weeklyTime = cleanText(input.weeklyTime, 60) || "每周 3-8 小时";
+
+  return {
+    title: "OPC 最小验证计划",
+    hypothesis: `我相信「${targetUser}」正在被「${painPoint}」困扰，并愿意为「${offer}」付费。`,
+    targetCustomer: {
+      who: targetUser,
+      painfulMoment: painPoint,
+      currentAlternative: "他们现在可能靠自己摸索、找朋友问、购买零散课程或暂时忍受问题。",
+      firstChannel: channel,
+    },
+    keyAssumptions: [
+      `目标客户确实频繁遇到「${painPoint}」。`,
+      `这个问题已经造成时间、收入、机会或情绪成本。`,
+      `他们愿意先用 ${price} 购买一个轻量试单。`,
+      `你可以用 ${weeklyTime} 完成第一版手工交付。`,
+    ],
+    interviewQuestions: [
+      `你最近一次遇到「${painPoint}」是什么时候？当时发生了什么？`,
+      "这个问题现在通常怎么解决？效果怎么样？",
+      "如果不解决，它会带来什么损失或麻烦？",
+      "你之前为类似问题花过钱、时间或请过人吗？",
+      "什么样的结果会让你觉得这件事值得付费？",
+      `如果有一个「${offer}」，你最希望它先解决哪一部分？`,
+      `你能接受 ${price} 的试单价格吗？为什么？`,
+      "你做购买决定时最担心什么？",
+      "还有谁也可能遇到这个问题？",
+      "如果我下周做一个小范围试单，你愿意看看吗？",
+    ],
+    servicePackage: {
+      name: `${targetUser}的${painPoint}最小解决方案`,
+      promise: `用一次轻量服务，帮客户把「${painPoint}」推进到可执行状态。`,
+      deliverables: [
+        "一次 30-60 分钟诊断或需求访谈",
+        "一份问题拆解与行动建议",
+        "一份可直接使用的模板、清单、方案或话术",
+        "一次交付后的反馈收集",
+      ],
+      boundary: "只承诺解决一个具体问题，不承诺长期增长、复杂系统或结果包票。",
+      trialPrice: price,
+      strengths,
+    },
+    sevenDayPlan: [
+      { day: "第 1 天", task: "写清一句话创业假设，列出 20 个潜在客户。", output: "客户名单 + 一句话假设" },
+      { day: "第 2 天", task: "联系 5 个熟人或半熟人，约 3 次访谈。", output: "私聊邀约文案 + 预约记录" },
+      { day: "第 3 天", task: "完成 3 次客户访谈，只问问题，不急着推销。", output: "访谈记录 + 高频原话" },
+      { day: "第 4 天", task: "整理痛点、付费理由和反对意见，调整服务包。", output: "验证复盘表" },
+      { day: "第 5 天", task: `发布 1 条试单邀请，明确对象、问题、交付物和 ${price}。`, output: "朋友圈/社群试单文案" },
+      { day: "第 6 天", task: "对有反馈的人私聊跟进，争取 1 个试单或深度访谈。", output: "试单名单 + 跟进记录" },
+      { day: "第 7 天", task: "判断继续、调整或暂停，并写下下一轮验证计划。", output: "继续/调整/暂停判断" },
+    ],
+    decisionRule: {
+      continue: "7 天内有 1 个付费试单，或 3 个明确表达愿意继续了解的潜在客户。",
+      adjust: "有人认可问题，但不接受当前交付形式或价格。",
+      stop: "访谈中多数人认为问题不重要、不高频，或完全不愿投入成本。",
+    },
+  };
+}
+
 function summarize(responses) {
   const stats = {
     total: responses.length,
@@ -212,10 +303,46 @@ async function handleApi(req, res) {
     return;
   }
 
+  if (req.method === "POST" && url.pathname === "/api/toolbox/run") {
+    const body = await parseBody(req);
+    const contact = cleanText(body.contact, 100);
+    if (!contact) {
+      sendJson(res, 400, { ok: false, error: "请先填写联系方式，才能领取免费完整体验。" });
+      return;
+    }
+    const runs = readToolboxRuns();
+    const existing = runs.find((item) => item.contact === contact);
+    if (existing) {
+      sendJson(res, 200, { ok: true, used: true, result: existing.result, run: existing });
+      return;
+    }
+    const result = buildToolboxPlan(body);
+    const run = {
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      name: cleanText(body.name, 60),
+      contact,
+      role: cleanText(body.role, 80),
+      targetUser: cleanText(body.targetUser, 160),
+      painPoint: cleanText(body.painPoint, 240),
+      offer: cleanText(body.offer, 200),
+      channel: cleanText(body.channel, 120),
+      weeklyTime: cleanText(body.weeklyTime, 60),
+      price: cleanText(body.price, 80),
+      strengths: cleanText(body.strengths, 240),
+      result,
+    };
+    runs.push(run);
+    writeToolboxRuns(runs);
+    sendJson(res, 200, { ok: true, used: false, result, run });
+    return;
+  }
+
   if (req.method === "GET" && url.pathname === "/api/admin/responses") {
     if (!isAdmin(req)) return sendJson(res, 401, { ok: false, error: "Unauthorized" });
     const responses = readResponses();
-    sendJson(res, 200, { ok: true, stats: summarize(responses), responses });
+    const toolboxRuns = readToolboxRuns();
+    sendJson(res, 200, { ok: true, stats: summarize(responses), responses, toolboxRuns });
     return;
   }
 

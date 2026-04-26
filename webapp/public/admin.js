@@ -1,4 +1,5 @@
 let latestRows = [];
+let latestToolboxRuns = [];
 
 const APP_BASE = (() => {
   const scriptSrc = document.currentScript?.getAttribute("src") || "";
@@ -85,6 +86,27 @@ function renderTable(rows) {
     .join("");
 }
 
+function renderToolboxTable(rows) {
+  latestToolboxRuns = rows || [];
+  document.getElementById("toolboxBody").innerHTML = latestToolboxRuns
+    .slice()
+    .reverse()
+    .map(
+      (row) => `
+        <tr>
+          <td>${new Date(row.createdAt).toLocaleString("zh-CN")}</td>
+          <td>${escapeHtml(row.name)}</td>
+          <td>${escapeHtml(row.contact)}</td>
+          <td>${escapeHtml(row.role)}</td>
+          <td>${escapeHtml(row.targetUser)}</td>
+          <td>${escapeHtml(row.painPoint)}</td>
+          <td>${escapeHtml(row.price)}</td>
+        </tr>
+      `,
+    )
+    .join("");
+}
+
 async function loadData() {
   const token = getToken();
   try {
@@ -98,12 +120,14 @@ async function loadData() {
     document.getElementById("totalCount").textContent = data.stats.total;
     document.getElementById("avgReadiness").textContent = data.stats.avgReadiness;
     document.getElementById("avgAi").textContent = data.stats.avgAi;
+    document.getElementById("toolboxCount").textContent = (data.toolboxRuns || []).length;
     renderBars("readinessChart", data.stats.readiness, data.stats.total);
     renderBars("aiChart", data.stats.aiLevel, data.stats.total);
     renderBars("directionChart", data.stats.direction, data.stats.total);
     renderBars("supportChart", data.stats.supportIntent, data.stats.total);
     renderBars("serviceChart", data.stats.serviceLead, data.stats.total);
     renderTable(data.responses);
+    renderToolboxTable(data.toolboxRuns);
   } catch (error) {
     showAdminMessage(error.message);
   }

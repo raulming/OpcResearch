@@ -140,6 +140,7 @@ function escapeHtml(value) {
 function renderResult(result) {
   const resultEl = document.getElementById("result");
   resultEl.classList.remove("hidden");
+  const toolboxHref = `${APP_BASE}/toolbox.html`;
   resultEl.innerHTML = `
     <h2>你的测试结果</h2>
     <div class="result-grid">
@@ -151,6 +152,12 @@ function renderResult(result) {
     <div class="result-card" style="margin-top: .8rem;">
       <span>第一份交付物</span>
       <strong>${escapeHtml(result.firstDeliverable)}</strong>
+    </div>
+    <div class="result-card" style="margin-top: .8rem;">
+      <span>免费工具箱体验</span>
+      <strong>生成 1 份完整《OPC 最小验证计划》</strong>
+      <p>包含想法验证、客户访谈、服务包/MVP 和 7 天行动安排。</p>
+      <a class="primary inline-action" href="${toolboxHref}">免费生成我的验证计划</a>
     </div>
   `;
   resultEl.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -174,6 +181,7 @@ document.getElementById("surveyForm").addEventListener("submit", async (event) =
   for (const [key, value] of formData.entries()) {
     payload[key] = value;
   }
+  localStorage.setItem("opcSurveyPayload", JSON.stringify(payload));
 
   const button = form.querySelector("button[type='submit']");
   button.disabled = true;
