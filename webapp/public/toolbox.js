@@ -18,15 +18,18 @@ function escapeHtml(value) {
 
 function fillFromSurvey() {
   const raw = localStorage.getItem("opcSurveyPayload");
-  if (!raw) return;
+  const form = document.getElementById("toolboxForm");
+  const savedInviteCode = localStorage.getItem("opcInviteCode");
   try {
-    const data = JSON.parse(raw);
-    const form = document.getElementById("toolboxForm");
-    ["name", "contact", "role", "targetUser", "painPoint", "channel", "weeklyTime"].forEach((key) => {
+    const data = raw ? JSON.parse(raw) : {};
+    ["name", "contact", "role", "targetUser", "painPoint", "channel", "weeklyTime", "inviteCode"].forEach((key) => {
       if (data[key] && form.elements[key]) form.elements[key].value = data[key];
     });
   } catch {
     // Ignore broken local data.
+  }
+  if (savedInviteCode && form.elements.inviteCode && !form.elements.inviteCode.value) {
+    form.elements.inviteCode.value = savedInviteCode;
   }
 }
 
@@ -107,6 +110,9 @@ document.getElementById("toolboxForm").addEventListener("submit", async (event) 
   event.preventDefault();
   const form = event.currentTarget;
   const payload = Object.fromEntries(new FormData(form).entries());
+  if (payload.inviteCode) {
+    localStorage.setItem("opcInviteCode", String(payload.inviteCode).trim());
+  }
   const button = form.querySelector("button[type='submit']");
   button.disabled = true;
   button.textContent = "生成中...";

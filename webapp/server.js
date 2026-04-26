@@ -11,6 +11,11 @@ const PUBLIC_DIR = path.join(ROOT, "public");
 const DATA_DIR = path.join(ROOT, "data");
 const DATA_FILE = path.join(DATA_DIR, "responses.json");
 const TOOLBOX_FILE = path.join(DATA_DIR, "toolbox_runs.json");
+const USERS_FILE = path.join(DATA_DIR, "users.json");
+const CREDITS_LEDGER_FILE = path.join(DATA_DIR, "credits_ledger.json");
+const INVITATIONS_FILE = path.join(DATA_DIR, "invitations.json");
+const INITIAL_CREDITS = 50;
+const INVITE_REWARD_CREDITS = 20;
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -68,6 +73,30 @@ function writeToolboxRuns(runs) {
   writeJsonList(TOOLBOX_FILE, runs);
 }
 
+function readUsers() {
+  return readJsonList(USERS_FILE);
+}
+
+function writeUsers(users) {
+  writeJsonList(USERS_FILE, users);
+}
+
+function readCreditLedger() {
+  return readJsonList(CREDITS_LEDGER_FILE);
+}
+
+function writeCreditLedger(entries) {
+  writeJsonList(CREDITS_LEDGER_FILE, entries);
+}
+
+function readInvitations() {
+  return readJsonList(INVITATIONS_FILE);
+}
+
+function writeInvitations(invitations) {
+  writeJsonList(INVITATIONS_FILE, invitations);
+}
+
 function sendJson(res, status, data) {
   res.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
@@ -98,6 +127,10 @@ function parseBody(req) {
 
 function cleanText(value, max = 200) {
   return String(value || "").trim().slice(0, max);
+}
+
+function normalizeContact(value) {
+  return cleanText(value, 100).toLowerCase();
 }
 
 function cleanNumber(value, min = 0, max = 100) {
@@ -246,6 +279,95 @@ function buildToolboxPlan(input) {
   };
 }
 
+function createInviteCode(contact) {
+  const code = crypto.createHash("sha256").update(`${contact}:${Date.now()}:${crypto.randomUUID()}`).digest("hex").slice(0, 6).toUpperCase();
+  return `OPC${code}`;
+}
+
+function findUserByInviteCode(users, inviteCode) {
+  const code = cleanText(inviteCode, 40).toUpperCase();
+  if (!code) return null;
+  return users.find((user) => user.inviteCode === code) || null;
+}
+
+function addCredit(users, ledger, userId, amount, reason, meta = {}) {
+  const user = users.find((item) => item.id === userId);
+  if (!user) return null;
+  const now = new Date().toISOString();
+  user.credits = Number(user.credits || 0) + amount;
+  user.updatedAt = now;
+  const entry = {
+    id: crypto.randomUUID(),
+    userId,
+    amount,
+    reason,
+    createdAt: now,
+    ...meta,
+  };
+  ledger.push(entry);
+  return entry;
+}
+
+function upsertUserFromBody(body, users, ledger) {
+  const contact = normalizeContact(body.contact);
+  if (!contact) return null;
+  const now = new Date().toISOString();
+  let user = users.find((item) => normalizeContact(item.contact) === contact);
+  if (!user) {
+    user = {
+      id: crypto.randomUUID(),
+      name: cleanText(body.name, 60),
+      contact,
+      role: cleanText(body.role, 80),
+      plan: "free",
+      credits: 0,
+      inviteCode: createInviteCode(contact),
+      inviterCode: "",
+      freeToolboxUsed: false,
+      createdAt: now,
+      updatedAt: now,
+    };
+    users.push(user);
+    addCredit(users, ledger, user.id, INITIAL_CREDITS, "signup_bonus");
+    return user;
+  }
+  user.name = cleanText(body.name, 60) || user.name || "";
+  user.contact = contact;
+  user.role = cleanText(body.role, 80) || user.role || "";
+  user.plan = user.plan || "free";
+  user.credits = Number.isFinite(Number(user.credits)) ? Number(user.credits) : INITIAL_CREDITS;
+  user.inviteCode = user.inviteCode || createInviteCode(contact);
+  user.inviterCode = user.inviterCode || "";
+  user.freeToolboxUsed = Boolean(user.freeToolboxUsed);
+  user.createdAt = user.createdAt || now;
+  user.updatedAt = now;
+  return user;
+}
+
+function applyInvitationReward(body, users, ledger, invitations, invitee) {
+  if (!invitee) return null;
+  const inviter = findUserByInviteCode(users, body.inviteCode);
+  if (!inviter || inviter.id === invitee.id) return null;
+  const duplicate = invitations.find((item) => item.inviteeId === invitee.id);
+  if (duplicate) return duplicate;
+
+  const now = new Date().toISOString();
+  const invitation = {
+    id: crypto.randomUUID(),
+    inviteCode: inviter.inviteCode,
+    inviterId: inviter.id,
+    inviteeId: invitee.id,
+    inviteeContact: invitee.contact,
+    rewardCredits: INVITE_REWARD_CREDITS,
+    createdAt: now,
+  };
+  invitee.inviterCode = invitee.inviterCode || inviter.inviteCode;
+  invitations.push(invitation);
+  addCredit(users, ledger, inviter.id, INVITE_REWARD_CREDITS, "invite_reward", { invitationId: invitation.id });
+  addCredit(users, ledger, invitee.id, INVITE_REWARD_CREDITS, "invitee_bonus", { invitationId: invitation.id });
+  return invitation;
+}
+
 function summarize(responses) {
   const stats = {
     total: responses.length,
@@ -299,6 +421,11 @@ async function handleApi(req, res) {
 
   if (req.method === "POST" && url.pathname === "/api/submit") {
     const body = await parseBody(req);
+    const users = readUsers();
+    const creditLedger = readCreditLedger();
+    const invitations = readInvitations();
+    const user = upsertUserFromBody(body, users, creditLedger);
+    const invitation = applyInvitationReward(body, users, creditLedger, invitations, user);
     const readinessScore = cleanNumber(body.readinessScore, 8, 40);
     const aiScore = cleanNumber(body.aiScore, 10, 50);
     const behaviorScore = cleanOptionalNumber(body.behaviorScore, 10, 50);
@@ -307,6 +434,7 @@ async function handleApi(req, res) {
     const response = {
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
+      userId: user ? user.id : "",
       name: cleanText(body.name, 60),
       contact: cleanText(body.contact, 100),
       role: cleanText(body.role, 80),
@@ -316,6 +444,7 @@ async function handleApi(req, res) {
       budget: cleanText(body.budget, 60),
       channel: cleanText(body.channel, 120),
       preferredScene: cleanText(body.preferredScene, 160),
+      inviteCode: cleanText(body.inviteCode, 40).toUpperCase(),
       supportIntent: cleanText(body.supportIntent, 100),
       notes: cleanText(body.notes, 300),
       readinessScore,
@@ -332,7 +461,10 @@ async function handleApi(req, res) {
     const responses = readResponses();
     responses.push(response);
     writeResponses(responses);
-    sendJson(res, 200, { ok: true, result: response });
+    writeUsers(users);
+    writeCreditLedger(creditLedger);
+    writeInvitations(invitations);
+    sendJson(res, 200, { ok: true, result: response, user, invitation });
     return;
   }
 
@@ -343,31 +475,49 @@ async function handleApi(req, res) {
       sendJson(res, 400, { ok: false, error: "请先填写联系方式，才能领取免费完整体验。" });
       return;
     }
+    const users = readUsers();
+    const creditLedger = readCreditLedger();
+    const invitations = readInvitations();
+    const user = upsertUserFromBody(body, users, creditLedger);
+    const invitation = applyInvitationReward(body, users, creditLedger, invitations, user);
     const runs = readToolboxRuns();
-    const existing = runs.find((item) => item.contact === contact);
-    if (existing) {
-      sendJson(res, 200, { ok: true, used: true, result: existing.result, run: existing });
+    const existing = runs.find((item) => normalizeContact(item.contact) === normalizeContact(contact));
+    if (user && user.freeToolboxUsed) {
+      writeUsers(users);
+      writeCreditLedger(creditLedger);
+      writeInvitations(invitations);
+      sendJson(res, 200, { ok: true, used: true, result: existing ? existing.result : null, run: existing || null, user, invitation });
       return;
     }
     const result = buildToolboxPlan(body);
     const run = {
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
+      userId: user ? user.id : "",
       name: cleanText(body.name, 60),
-      contact,
+      contact: normalizeContact(contact),
       role: cleanText(body.role, 80),
       targetUser: cleanText(body.targetUser, 160),
       painPoint: cleanText(body.painPoint, 240),
       offer: cleanText(body.offer, 200),
       channel: cleanText(body.channel, 120),
       weeklyTime: cleanText(body.weeklyTime, 60),
+      inviteCode: cleanText(body.inviteCode, 40).toUpperCase(),
       price: cleanText(body.price, 80),
       strengths: cleanText(body.strengths, 240),
       result,
     };
     runs.push(run);
+    if (user) {
+      user.freeToolboxUsed = true;
+      user.updatedAt = new Date().toISOString();
+      addCredit(users, creditLedger, user.id, 0, "free_toolbox_use", { toolboxRunId: run.id });
+    }
     writeToolboxRuns(runs);
-    sendJson(res, 200, { ok: true, used: false, result, run });
+    writeUsers(users);
+    writeCreditLedger(creditLedger);
+    writeInvitations(invitations);
+    sendJson(res, 200, { ok: true, used: false, result, run, user, invitation });
     return;
   }
 
@@ -375,7 +525,36 @@ async function handleApi(req, res) {
     if (!isAdmin(req)) return sendJson(res, 401, { ok: false, error: "Unauthorized" });
     const responses = readResponses();
     const toolboxRuns = readToolboxRuns();
-    sendJson(res, 200, { ok: true, stats: summarize(responses), responses, toolboxRuns });
+    const users = readUsers();
+    const creditLedger = readCreditLedger();
+    const invitations = readInvitations();
+    const baseStats = summarize(responses);
+    sendJson(res, 200, {
+      ok: true,
+      stats: {
+        ...baseStats,
+        userCount: users.length,
+        creditRecordCount: creditLedger.length,
+        inviteCount: invitations.length,
+      },
+      responses,
+      toolboxRuns,
+      users,
+      creditLedger,
+      invitations,
+      userSummary: {
+        total: users.length,
+        totalCredits: users.reduce((sum, user) => sum + Number(user.credits || 0), 0),
+        freeToolboxUsed: users.filter((user) => user.freeToolboxUsed).length,
+      },
+      creditSummary: {
+        totalEntries: creditLedger.length,
+        totalAwarded: creditLedger.reduce((sum, entry) => sum + Number(entry.amount || 0), 0),
+      },
+      invitationSummary: {
+        total: invitations.length,
+      },
+    });
     return;
   }
 
@@ -417,6 +596,10 @@ const server = http.createServer(async (req, res) => {
 });
 
 ensureDataFile();
+ensureDataFile(TOOLBOX_FILE);
+ensureDataFile(USERS_FILE);
+ensureDataFile(CREDITS_LEDGER_FILE);
+ensureDataFile(INVITATIONS_FILE);
 server.listen(PORT, () => {
   console.log(`OPC survey app: http://localhost:${PORT}`);
   console.log(`Admin page: http://localhost:${PORT}${BASE_PATH}/admin.html?token=${ADMIN_TOKEN}`);

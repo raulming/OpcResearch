@@ -1,5 +1,6 @@
 let latestRows = [];
 let latestToolboxRuns = [];
+let latestUsers = [];
 
 const APP_BASE = (() => {
   const scriptSrc = document.currentScript?.getAttribute("src") || "";
@@ -79,6 +80,7 @@ function renderTable(rows) {
           <td>${row.behaviorScore ?? "未填写"} / ${escapeHtml(row.behaviorType || "未填写")}</td>
           <td>${escapeHtml(row.direction)}</td>
           <td>${escapeHtml(row.supportIntent || "未填写")}</td>
+          <td>${escapeHtml(row.inviteCode || "未填写")}</td>
           <td>${escapeHtml(row.serviceLead)}</td>
           <td>${escapeHtml(row.painPoint)}</td>
         </tr>
@@ -101,7 +103,27 @@ function renderToolboxTable(rows) {
           <td>${escapeHtml(row.role)}</td>
           <td>${escapeHtml(row.targetUser)}</td>
           <td>${escapeHtml(row.painPoint)}</td>
+          <td>${escapeHtml(row.inviteCode || "未填写")}</td>
           <td>${escapeHtml(row.price)}</td>
+        </tr>
+      `,
+    )
+    .join("");
+}
+
+function renderUsersTable(rows) {
+  latestUsers = rows || [];
+  document.getElementById("usersBody").innerHTML = latestUsers
+    .slice()
+    .sort((a, b) => String(a.contact || "").localeCompare(String(b.contact || ""), "zh-CN"))
+    .map(
+      (row) => `
+        <tr>
+          <td>${escapeHtml(row.contact || "未填写")}</td>
+          <td>${escapeHtml(row.plan || "free")}</td>
+          <td>${Number(row.credits || 0)}</td>
+          <td>${row.freeToolboxUsed ? "已使用" : "未使用"}</td>
+          <td>${escapeHtml(row.inviteCode || "未生成")}</td>
         </tr>
       `,
     )
@@ -123,6 +145,9 @@ async function loadData() {
     document.getElementById("avgAi").textContent = data.stats.avgAi;
     document.getElementById("avgBehavior").textContent = data.stats.avgBehavior;
     document.getElementById("toolboxCount").textContent = (data.toolboxRuns || []).length;
+    document.getElementById("userCount").textContent = data.stats.userCount ?? data.userSummary?.total ?? 0;
+    document.getElementById("creditRecordCount").textContent = data.stats.creditRecordCount ?? data.creditLedger?.length ?? 0;
+    document.getElementById("inviteCount").textContent = data.stats.inviteCount ?? data.invitations?.length ?? 0;
     renderBars("readinessChart", data.stats.readiness, data.stats.total);
     renderBars("aiChart", data.stats.aiLevel, data.stats.total);
     renderBars("behaviorChart", data.stats.behaviorType, data.stats.total);
@@ -131,14 +156,15 @@ async function loadData() {
     renderBars("serviceChart", data.stats.serviceLead, data.stats.total);
     renderTable(data.responses);
     renderToolboxTable(data.toolboxRuns);
+    renderUsersTable(data.users);
   } catch (error) {
     showAdminMessage(error.message);
   }
 }
 
 function toCsv(rows) {
-  const headers = ["时间", "姓名", "联系方式", "职业", "启动准备分", "启动状态", "AI分", "AI状态", "behaviorScore", "behaviorType", "方向", "帮助意向", "服务线索", "目标人群", "痛点", "AI场景", "备注"];
-  const fields = ["createdAt", "name", "contact", "role", "readinessScore", "readinessLevel", "aiScore", "aiLevel", "behaviorScore", "behaviorType", "direction", "supportIntent", "serviceLead", "targetUser", "painPoint", "preferredScene", "notes"];
+  const headers = ["时间", "姓名", "联系方式", "职业", "启动准备分", "启动状态", "AI分", "AI状态", "behaviorScore", "behaviorType", "方向", "帮助意向", "邀请码", "服务线索", "目标人群", "痛点", "AI场景", "备注"];
+  const fields = ["createdAt", "name", "contact", "role", "readinessScore", "readinessLevel", "aiScore", "aiLevel", "behaviorScore", "behaviorType", "direction", "supportIntent", "inviteCode", "serviceLead", "targetUser", "painPoint", "preferredScene", "notes"];
   const escapeCsv = (value) => `"${String(value ?? "").replaceAll('"', '""')}"`;
   return [headers.map(escapeCsv).join(","), ...rows.map((row) => fields.map((field) => escapeCsv(row[field])).join(","))].join("\n");
 }

@@ -186,9 +186,16 @@ function renderResult(result) {
   resultEl.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function fillInviteCode() {
+  const input = document.querySelector('input[name="inviteCode"]');
+  const inviteCode = localStorage.getItem("opcInviteCode");
+  if (input && inviteCode) input.value = inviteCode;
+}
+
 renderQuestions("readinessQuestions", readinessQuestions, "readiness");
 renderQuestions("aiQuestions", aiQuestions, "ai");
 renderQuestions("behaviorQuestions", behaviorQuestions, "behavior");
+fillInviteCode();
 
 document.getElementById("surveyForm").addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -209,6 +216,9 @@ document.getElementById("surveyForm").addEventListener("submit", async (event) =
     payload[key] = value;
   }
   localStorage.setItem("opcSurveyPayload", JSON.stringify(payload));
+  if (payload.inviteCode) {
+    localStorage.setItem("opcInviteCode", String(payload.inviteCode).trim());
+  }
 
   const button = form.querySelector("button[type='submit']");
   button.disabled = true;

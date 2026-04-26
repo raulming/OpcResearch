@@ -1,5 +1,8 @@
 webapp/data/responses.json
 webapp/data/toolbox_runs.json
+webapp/data/users.json
+webapp/data/credits_ledger.json
+webapp/data/invitations.json
 .DS_Store
 node_modules/
 *.log
