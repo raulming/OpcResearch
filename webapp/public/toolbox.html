@@ -3,37 +3,79 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>极简创业验证工具箱</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <title>验证工具箱 | OPC Navigator</title>
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header class="topbar">
-      <div>
-        <p class="eyebrow">Minimalist Entrepreneur Toolbox</p>
-        <h1>极简创业验证工具箱</h1>
-      </div>
-      <a class="ghost-link" href="/">返回自测</a>
+    <header class="app-header">
+      <a class="brand" href="./">
+        <span class="brand-mark">OPC</span>
+        <span>
+          <strong>OPC Navigator</strong>
+          <span>AI 一人公司启动系统</span>
+        </span>
+      </a>
+      <nav class="nav" aria-label="主导航">
+        <a href="./">启动自测</a>
+        <a href="toolbox.html">验证工具箱</a>
+        <a href="member.html">会员中心</a>
+      </nav>
     </header>
 
-    <main class="shell">
-      <section class="hero">
+    <main class="product-shell">
+      <section class="workbench-hero">
         <div class="hero-copy">
-          <h2>免费生成 1 份完整创业验证计划</h2>
-          <p>把你的想法变成可执行的 7 天验证任务，包含想法假设、客户访谈、服务包/MVP 和试单判断标准。</p>
+          <p class="eyebrow">Minimalist Entrepreneur Toolbox</p>
+          <h1>把一个想法压缩成 7 天可验证计划</h1>
+          <p>输入目标客户、痛点、触达渠道和试单价格，系统会生成创业假设、访谈问题、最小服务包和行动节奏。</p>
+          <div class="hero-actions">
+            <a class="primary" href="#toolboxForm">填写验证信息</a>
+            <a class="secondary" href="member.html">查看我的权益</a>
+          </div>
         </div>
-        <div class="hero-panel">
-          <span>本次原价</span>
-          <strong>80 验证积分</strong>
-          <small>新用户可免费完整体验 1 次</small>
-        </div>
+        <aside class="hero-panel">
+          <div class="system-map">
+            <div class="map-item">
+              <span class="map-icon">H</span>
+              <div><strong>一句话假设</strong><span>明确谁、什么痛点、为什么付费</span></div>
+              <span class="chip">定位</span>
+            </div>
+            <div class="map-item">
+              <span class="map-icon">Q</span>
+              <div><strong>客户访谈</strong><span>生成 10 个验证问题</span></div>
+              <span class="chip">访谈</span>
+            </div>
+            <div class="map-item">
+              <span class="map-icon">M</span>
+              <div><strong>最小服务包</strong><span>限定交付物、边界和价格</span></div>
+              <span class="chip">MVP</span>
+            </div>
+            <div class="map-item">
+              <span class="map-icon">7</span>
+              <div><strong>7 天行动</strong><span>每天一个可完成输出</span></div>
+              <span class="chip">执行</span>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="tool-grid">
+        <article class="tool-panel">
+          <h2>免费完整体验</h2>
+          <p>每个联系方式可完整生成一次验证计划。后续版本会接入积分消耗、订阅计划和更多工具模块。</p>
+        </article>
+        <article class="tool-panel">
+          <h2>从自测延续</h2>
+          <p>如果你已经完成启动自测，姓名、联系方式、目标人群、痛点和邀请码会自动带入。</p>
+        </article>
       </section>
 
       <section class="section">
         <div class="section-head">
           <p class="step">01</p>
           <div>
-            <h2>填写最小验证信息</h2>
-            <p>请尽量写具体。越具体，生成的计划越容易直接执行。</p>
+            <h2>最小验证信息</h2>
+            <p>信息越具体，生成的访谈问题和服务包越接近真实执行。</p>
           </div>
         </div>
 
@@ -56,13 +98,13 @@
           <label>邀请码<input name="inviteCode" placeholder="从自测自动带入，可选" /></label>
           <label>试单价格预期<input name="price" placeholder="例如：99 元、199 元、499 元" /></label>
           <label class="wide">你的优势或资源<textarea name="strengths" rows="3" placeholder="例如：懂本地生活运营、有 3 年咨询经验、朋友圈有 1000 个精准好友"></textarea></label>
-          <button class="primary wide" type="submit">免费生成我的验证计划</button>
+          <button class="primary wide" type="submit">生成验证计划</button>
         </form>
       </section>
 
       <section id="toolboxResult" class="result hidden" aria-live="polite"></section>
     </main>
 
-    <script src="/toolbox.js"></script>
+    <script src="toolbox.js"></script>
   </body>
 </html>

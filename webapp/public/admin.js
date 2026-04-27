@@ -3,8 +3,7 @@ let latestToolboxRuns = [];
 let latestUsers = [];
 
 const APP_BASE = (() => {
-  const scriptSrc = document.currentScript?.getAttribute("src") || "";
-  const scriptPath = scriptSrc.startsWith("http") ? new URL(scriptSrc).pathname : scriptSrc;
+  const scriptPath = new URL(document.currentScript?.src || "admin.js", location.href).pathname;
   return scriptPath.endsWith("/admin.js") ? scriptPath.slice(0, -"/admin.js".length) : "";
 })();
 

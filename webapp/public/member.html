@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>会员中心 | OPC Navigator</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <a class="brand" href="./">
+        <span class="brand-mark">OPC</span>
+        <span>
+          <strong>OPC Navigator</strong>
+          <span>AI 一人公司启动系统</span>
+        </span>
+      </a>
+      <nav class="nav" aria-label="主导航">
+        <a href="./">启动自测</a>
+        <a href="toolbox.html">验证工具箱</a>
+        <a href="member.html">会员中心</a>
+      </nav>
+    </header>
+
+    <main class="product-shell">
+      <section class="workbench-hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Member Workspace</p>
+          <h1>你的 OPC 成长账户</h1>
+          <p>这里汇总你的本地测评结果、工具箱体验状态、积分余额和邀请码。正式账号体系上线后，这里会扩展为完整会员工作台。</p>
+          <div class="hero-actions">
+            <a class="primary" href="./">继续完成自测</a>
+            <a class="secondary" href="toolbox.html">使用验证工具箱</a>
+          </div>
+        </div>
+        <aside class="hero-panel">
+          <div class="system-map">
+            <div class="map-item">
+              <span class="map-icon">P</span>
+              <div><strong id="memberName">未绑定</strong><span id="memberContact">完成自测后生成本地账户</span></div>
+              <span class="chip" id="memberPlanBadge">Free</span>
+            </div>
+            <div class="map-item">
+              <span class="map-icon">C</span>
+              <div><strong id="memberCreditsValue">未记录</strong><span>可用于后续工具和服务权益</span></div>
+              <span class="chip">积分</span>
+            </div>
+            <div class="map-item">
+              <span class="map-icon">I</span>
+              <div><strong id="memberInviteValue">待生成</strong><span>邀请新用户可获得奖励积分</span></div>
+              <span class="chip">邀请</span>
+            </div>
+            <div class="map-item">
+              <span class="map-icon">T</span>
+              <div><strong id="memberTrialValue">未使用</strong><span>免费完整工具箱体验</span></div>
+              <span class="chip">体验</span>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="member-grid">
+        <article class="member-card">
+          <h2>最近测评</h2>
+          <p id="surveySummary">暂无测评记录。</p>
+          <a class="secondary inline-action" href="./">重新测评</a>
+        </article>
+        <article class="member-card">
+          <h2>验证计划</h2>
+          <p id="toolboxSummary">还没有生成验证计划。</p>
+          <a class="secondary inline-action" href="toolbox.html">生成计划</a>
+        </article>
+        <article class="member-card">
+          <h2>可用权益</h2>
+          <p>当前为 Free 计划，包含一次完整工具箱体验、基础测评报告和邀请码奖励。</p>
+        </article>
+        <article class="member-card">
+          <h2>下一步</h2>
+          <p id="nextAction">先完成启动自测，再进入工具箱生成 7 天验证计划。</p>
+        </article>
+      </section>
+    </main>
+
+    <script src="member.js"></script>
+  </body>
+</html>

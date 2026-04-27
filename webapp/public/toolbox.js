@@ -1,6 +1,5 @@
 const APP_BASE = (() => {
-  const scriptSrc = document.currentScript?.getAttribute("src") || "";
-  const scriptPath = scriptSrc.startsWith("http") ? new URL(scriptSrc).pathname : scriptSrc;
+  const scriptPath = new URL(document.currentScript?.src || "toolbox.js", location.href).pathname;
   return scriptPath.endsWith("/toolbox.js") ? scriptPath.slice(0, -"/toolbox.js".length) : "";
 })();
 
@@ -18,6 +17,7 @@ function escapeHtml(value) {
 
 function fillFromSurvey() {
   const raw = localStorage.getItem("opcSurveyPayload");
+  const storedUser = localStorage.getItem("opcUser");
   const form = document.getElementById("toolboxForm");
   const savedInviteCode = localStorage.getItem("opcInviteCode");
   try {
@@ -25,6 +25,16 @@ function fillFromSurvey() {
     ["name", "contact", "role", "targetUser", "painPoint", "channel", "weeklyTime", "inviteCode"].forEach((key) => {
       if (data[key] && form.elements[key]) form.elements[key].value = data[key];
     });
+  } catch {
+    // Ignore broken local data.
+  }
+  try {
+    const user = storedUser ? JSON.parse(storedUser) : null;
+    if (user) {
+      ["name", "contact", "role"].forEach((key) => {
+        if (user[key] && form.elements[key] && !form.elements[key].value) form.elements[key].value = user[key];
+      });
+    }
   } catch {
     // Ignore broken local data.
   }
@@ -125,8 +135,12 @@ document.getElementById("toolboxForm").addEventListener("submit", async (event) 
     const data = await readJsonResponse(response);
     if (!data.ok) throw new Error(data.error || "生成失败");
     localStorage.setItem("opcToolboxUsed", "true");
+    if (data.user) {
+      localStorage.setItem("opcUser", JSON.stringify(data.user));
+      if (data.user.inviteCode) localStorage.setItem("opcInviteCode", data.user.inviteCode);
+    }
     renderPlan(data.result, data.used);
-    button.textContent = data.used ? "已展示历史计划" : "已生成验证计划";
+    button.textContent = data.used ? "已展示历史计划" : "验证计划已生成";
   } catch (error) {
     const resultEl = document.getElementById("toolboxResult");
     resultEl.classList.remove("hidden");

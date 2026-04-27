@@ -36,8 +36,7 @@ const behaviorQuestions = [
 ];
 
 const APP_BASE = (() => {
-  const scriptSrc = document.currentScript?.getAttribute("src") || "";
-  const scriptPath = scriptSrc.startsWith("http") ? new URL(scriptSrc).pathname : scriptSrc;
+  const scriptPath = new URL(document.currentScript?.src || "app.js", location.href).pathname;
   return scriptPath.endsWith("/app.js") ? scriptPath.slice(0, -"/app.js".length) : "";
 })();
 
@@ -164,26 +163,53 @@ function renderResult(result) {
   const toolboxHref = `${APP_BASE}/toolbox.html`;
   const behaviorType = result.behaviorType || classifyBehavior(result.behaviorScore);
   resultEl.innerHTML = `
-    <h2>你的测试结果</h2>
+    <h2>你的 OPC 启动报告</h2>
     <div class="result-grid">
       <div class="result-card"><span>启动准备度</span><strong>${result.readinessScore} / 40</strong><small>${result.readinessLevel}</small></div>
       <div class="result-card"><span>AI 能力状态</span><strong>${result.aiScore} / 50</strong><small>${result.aiLevel}</small></div>
       <div class="result-card"><span>行为风格</span><strong>${result.behaviorScore} / 50</strong><small>${escapeHtml(behaviorType)}</small></div>
       <div class="result-card"><span>适合方向</span><strong>${escapeHtml(result.direction)}</strong></div>
-      <div class="result-card"><span>下一步重点</span><strong>先做最小验证</strong></div>
     </div>
-    <div class="result-card" style="margin-top: .8rem;">
-      <span>第一份交付物</span>
-      <strong>${escapeHtml(result.firstDeliverable)}</strong>
-    </div>
-    <div class="result-card" style="margin-top: .8rem;">
-      <span>免费工具箱体验</span>
-      <strong>生成 1 份完整《OPC 最小验证计划》</strong>
-      <p>包含想法验证、客户访谈、服务包/MVP 和 7 天行动安排。</p>
-      <a class="primary inline-action" href="${toolboxHref}">免费生成我的验证计划</a>
+    <div class="toolbox-grid">
+      <div class="result-card">
+        <span>第一份交付物</span>
+        <strong>${escapeHtml(result.firstDeliverable)}</strong>
+        <p>先拿到真实反馈，再决定要不要投入更多时间和预算。</p>
+      </div>
+      <div class="result-card">
+        <span>下一步</span>
+        <strong>生成《OPC 最小验证计划》</strong>
+        <p>包含创业假设、客户访谈、服务包/MVP 和 7 天行动安排。</p>
+        <a class="primary inline-action" href="${toolboxHref}">进入验证工具箱</a>
+      </div>
     </div>
   `;
   resultEl.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function saveUserState(user) {
+  if (!user) return;
+  localStorage.setItem("opcUser", JSON.stringify(user));
+  if (user.inviteCode) localStorage.setItem("opcInviteCode", user.inviteCode);
+  renderMemberSnapshot(user);
+}
+
+function renderMemberSnapshot(user = null) {
+  let storedUser = user;
+  if (!storedUser) {
+    try {
+      storedUser = JSON.parse(localStorage.getItem("opcUser") || "null");
+    } catch {
+      storedUser = null;
+    }
+  }
+  if (!storedUser) return;
+  const plan = document.getElementById("memberPlan");
+  const credits = document.getElementById("memberCredits");
+  const inviteCode = document.getElementById("memberInviteCode");
+  if (plan) plan.textContent = storedUser.plan || "Free";
+  if (credits) credits.textContent = `${Number(storedUser.credits || 0)} 积分`;
+  if (inviteCode) inviteCode.textContent = storedUser.inviteCode || "待生成";
 }
 
 function fillInviteCode() {
@@ -196,6 +222,7 @@ renderQuestions("readinessQuestions", readinessQuestions, "readiness");
 renderQuestions("aiQuestions", aiQuestions, "ai");
 renderQuestions("behaviorQuestions", behaviorQuestions, "behavior");
 fillInviteCode();
+renderMemberSnapshot();
 
 document.getElementById("surveyForm").addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -231,11 +258,15 @@ document.getElementById("surveyForm").addEventListener("submit", async (event) =
     });
     const data = await readJsonResponse(response);
     if (!data.ok) throw new Error(data.error || "提交失败");
+    localStorage.setItem("opcSurveyResult", JSON.stringify(data.result));
+    saveUserState(data.user);
     renderResult(data.result);
-    button.textContent = "已提交，可继续修改后再次提交";
+    button.textContent = "报告已生成";
   } catch (error) {
-    renderResult(buildLocalResult(payload));
-    button.textContent = "已生成结果，后台未保存";
+    const localResult = buildLocalResult(payload);
+    localStorage.setItem("opcSurveyResult", JSON.stringify(localResult));
+    renderResult(localResult);
+    button.textContent = "报告已生成，本地保存";
   } finally {
     button.disabled = false;
   }
